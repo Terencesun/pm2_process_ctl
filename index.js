@@ -14,7 +14,16 @@ const clearRequire = (reqPath) => {
 
 const readProcessFile = () => {
     const rConfig = JSON.parse(fs.readFileSync(conf.module_conf.config_file));
-    configStore = [ ...rConfig ];
+    configStore = [];
+    for (const meta of rConfig) {
+        const normalizeMeta = path.normalize(meta);
+        clearRequire(normalizeMeta);
+        const ctx = require(normalizeMeta);
+        configStore.push({
+            key: normalizeMeta,
+            value: ctx["apps"],
+        })
+    }
 }
 
 const pm2List = () => {
@@ -54,19 +63,21 @@ const checkAndBootProcess = async () => {
     const processDescriptionList = await pm2List();
     const processList = _.filter(processDescriptionList, x => !x.pm2_env.pmx_module);
     for (const process of processList) {
-        const findData = _.find(configStore, x => path.resolve(path.normalize(x), "../") === path.normalize(process.pm2_env.pm_cwd));
+        const findData = _.find(configStore, meta => _.find(meta["value"], x => x.name === process.name));
         if (!findData) {
             // 删除进程
             await pm2Delete(process.pm_id);
         }
     }
-    for (const configPath of configStore) {
-        const findData = _.find(processList, x => path.normalize(x.pm2_env.pm_cwd) === path.resolve(path.normalize(configPath), "../"));
-        if (!findData) {
+    for (const configObj of configStore) {
+        const configValue = configObj["value"];
+        const names = _.map(configValue, x => x.name);
+        const processNames = _.map(processList, x => x.name);
+        const diffDatas = _.filter(configValue, x => _.intersection(_.difference(names, processNames), names).includes(x["name"]));
+
+        if (diffDatas.length !== 0) {
             // 创建进程
-            clearRequire(configPath);
-            const ctx = require(configPath);
-            await pm2Start(path.resolve(path.normalize(configPath), "../"), ctx["apps"]);
+            await pm2Start(path.resolve(configObj["key"], "../"), diffDatas);
         }
     }
 }
