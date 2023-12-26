@@ -1,6 +1,6 @@
 {
   "name": "pm2_process_ctl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pm2 Process Control",
   "main": "index.js",
   "dependencies": {

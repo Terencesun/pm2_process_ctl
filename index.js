@@ -40,7 +40,6 @@ const pm2Start = (cwd, ecosystemConfig) => {
         for (const meta of ecosystemConfig) {
             meta["cwd"] = meta["cwd"] ? path.resolve(cwd, meta["cwd"]) : cwd;
         }
-        console.log(ecosystemConfig);
         pm2.start(ecosystemConfig, err => {
             if (err) {
                 console.error(err);
@@ -98,7 +97,7 @@ function main() {
     pm2.connect(async err => {
         if (err) return console.error(err.stack || err);
         if (!conf.module_conf.config_file) return console.error("no config file path setted.");
-
+        console.log(`load config_file -> ${conf.module_conf.config_file}`);
         // 读取配置文件
         readProcessFile();
         // 检查进程
