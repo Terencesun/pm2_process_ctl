@@ -40,6 +40,7 @@ const pm2Start = (cwd, ecosystemConfig) => {
         for (const meta of ecosystemConfig) {
             meta["cwd"] = meta["cwd"] ? path.resolve(cwd, meta["cwd"]) : cwd;
         }
+        console.log(ecosystemConfig);
         pm2.start(ecosystemConfig, err => {
             if (err) {
                 console.error(err);
