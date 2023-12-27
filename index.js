@@ -3,6 +3,8 @@ const pmx = require("pmx");
 const path = require("path");
 const fs = require("fs");
 const _ = require("lodash");
+const parsePath = require("parse-path");
+const sleep = require("sleepjs");
 
 const conf = pmx.initModule({});
 
@@ -16,13 +18,16 @@ const readProcessFile = () => {
     const rConfig = JSON.parse(fs.readFileSync(conf.module_conf.config_file));
     configStore = [];
     for (const meta of rConfig) {
-        const normalizeMeta = path.normalize(meta);
+        const originalMeta = path.normalize(meta).split("?");
+        const normalizeMeta = originalMeta[0];
+        const queryMeta = originalMeta[1] ? parsePath(`pm2://0.0.0.0?${originalMeta[1]}`).query : {};
         clearRequire(normalizeMeta);
         const ctx = require(normalizeMeta);
         configStore.push({
             key: normalizeMeta,
             value: ctx["apps"],
-        })
+            payload: queryMeta,
+        });
     }
 }
 
@@ -77,7 +82,9 @@ const checkAndBootProcess = async () => {
 
         if (diffDatas.length !== 0) {
             // 创建进程
+            const margin = parseInt(_.get(configObj, "payload.margin", 0), 10);
             await pm2Start(path.resolve(configObj["key"], "../"), diffDatas);
+            await sleep.sleepMilliseconds(margin);
         }
     }
 }
@@ -113,8 +120,8 @@ function main() {
         readProcessFile();
         // 检查进程
         await checkAndBootProcess();
-
-        // 设置文件监听
+        //
+        // // 设置文件监听
         listenFile();
     });
 }
