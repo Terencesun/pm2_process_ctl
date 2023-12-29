@@ -15,7 +15,8 @@ const clearRequire = (reqPath) => {
 }
 
 const readProcessFile = () => {
-    const rConfig = JSON.parse(fs.readFileSync(conf.module_conf.config_file));
+    clearRequire(conf.module_conf.config_file);
+    const rConfig = require(conf.module_conf.config_file);
     configStore = [];
     for (const meta of rConfig) {
         const originalMeta = path.normalize(meta).split("?");
